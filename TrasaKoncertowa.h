@@ -29,6 +29,7 @@ class TrasaKoncertowa
         int pobierzLiczbeKoncertow() const;
         int obliczBudzet() const;
         void podsumujTrase() const;
+        void otworzOknoMapy();
        
 
         bool operator<(const TrasaKoncertowa& inna) const;

@@ -1,4 +1,6 @@
 #include "TrasaKoncertowa.h"
+#include "OknoMapy.h"
+
 
 
 TrasaKoncertowa::TrasaKoncertowa(string nazwa, Artysta* gwiazda)
@@ -113,4 +115,15 @@ void TrasaKoncertowa::podsumujTrase() const
 bool TrasaKoncertowa::operator<(const TrasaKoncertowa& inna) const
 {
     return obliczBudzet() < inna.obliczBudzet();
+}
+void TrasaKoncertowa::otworzOknoMapy()
+{
+    if (liczbaKoncertow == 0)
+    {
+        throw "BLAD: Ta trasa nie ma jeszcze zadnych koncertow! Dodaj najpierw koncert (opcja 3).";
+    }
+    string nazwaGwiazdy = (gwiazdaTrasy != nullptr) ? gwiazdaTrasy->pobierzNazwe() : "Brak";
+    cout << "Otwieranie okna graficznego dla trasy: " << nazwaTrasy << "..." << endl;
+    OknoMapy okno(nazwaTrasy, nazwaGwiazdy, tablicaKoncertow, liczbaKoncertow, obliczBudzet());
+    okno.pokaz();
 }
