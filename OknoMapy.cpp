@@ -6,6 +6,7 @@
 #include <vector>
 #include <cctype>
 
+// pojedynczy punkt miasta na mapie w pikselach
 struct Punkt
 {
     float x;
@@ -13,6 +14,7 @@ struct Punkt
     string miasto;
 };
 
+// zamiana na male litery do rozpoznania nazwy artysty (bts/jennie
 static string naMale(string s)
 {
     for (int i = 0; i < (int)s.size(); i++)
@@ -22,6 +24,7 @@ static string naMale(string s)
     return s;
 }
 
+// zamiana spacji na %20 zeby miasto dzialalo w linku URL
 static string zakodujUrl(string s)
 {
     string out = "";
@@ -34,6 +37,7 @@ static string zakodujUrl(string s)
     return out;
 }
 
+// pobranie wspolrzednych miasta z Open-Meteo przez PowerShella i plik tymczasowy
 static bool pobierzZApi(string miasto, float& lat, float& lon)
 {
     string q = zakodujUrl(miasto);
@@ -63,7 +67,7 @@ static void znajdzPozycje(string miasto, int nr, float& x, float& y)
     float lat = 0.0f;
     float lon = 0.0f;
 
-    if (!pobierzZApi(miasto, lat, lon))
+    if (!pobierzZApi(miasto, lat, lon))  // tryb awaryjny bez internetu - zapasowe wspolrzedne z nazwy miasta
     {
         int suma = 0;
         for (int i = 0; i < (int)miasto.size(); i++)
@@ -74,10 +78,13 @@ static void znajdzPozycje(string miasto, int nr, float& x, float& y)
         lon = -130.0f + ((suma * 17 + nr * 41) % 270);
     }
 
+    // przeliczenie stopni na piksele obszaru mapy (od 270, 90 o rozmiarze 830x475)
+
     x = 270.0f + (lon + 180.0f) / 370.5f * 830.0f;
     y = 90.0f + (83.6f - lat) / 173.6f * 475.0f;
 }
 
+// przyciecie zdjecia do proporcji ramki zeby nie bylo rozciagniete
 static void rysujZdjecie(Texture2D tex, Rectangle dst)
 {
     float skala = (float)tex.width / (float)tex.height;
@@ -96,6 +103,7 @@ static void rysujZdjecie(Texture2D tex, Rectangle dst)
     DrawTexturePro(tex, src, dst, Vector2{ 0, 0 }, 0.0f, WHITE);
 }
 
+// rysowanie zaokraglonego przycisku z wysrodkowanym napisem
 static void rysujPrzycisk(Font font, Rectangle r, const char* tekst, Color kolor)
 {
     DrawRectangleRounded(r, 0.3f, 8, kolor);
@@ -116,10 +124,12 @@ void OknoMapy::pokaz()
 {
     if (liczbaKoncertow == 0) return;
 
+    // otwarcie okna 1100x680 bez logow raylib w konsoli, odswiezanie 60 FPS
     SetTraceLogLevel(LOG_NONE);
     InitWindow(1100, 680, nazwaTrasy.c_str());
     SetTargetFPS(60);
 
+    // wczytanie czcionki, plakatu i mapy
     Font font = GetFontDefault();
     bool maFont = FileExists("C:/Windows/Fonts/segoeui.ttf");
     if (maFont)
@@ -136,6 +146,7 @@ void OknoMapy::pokaz()
     Texture2D texMapa = {};
     if (FileExists("mapa.png")) texMapa = LoadTexture("mapa.png");
 
+    // wyliczenie pozycji miast raz przed uruchomieniem petli okna
     vector<Punkt> punkty;
     for (int i = 0; i < liczbaKoncertow; i++)
     {
@@ -146,13 +157,13 @@ void OknoMapy::pokaz()
     }
 
     bool maPlakat = (texFoto.id != 0);
-    int ekran = maPlakat ? 0 : 1;
+    int ekran = maPlakat ? 0 : 1; // 0 = plakat, 1 = mapa
     int wybrany = 0, odcinek = 0, pauzaKlatki = 20;
     float postep = 0.0f, samX = punkty[0].x, samY = punkty[0].y, kat = 0.0f;
     bool pauza = false, bladKom = false;
     string komunikat = "";
 
-    Rectangle btnMapa = { 465, 515, 280, 48 };
+    Rectangle btnMapa = { 465, 515, 280, 48 }; // przyciski {x, y, szerokosc, wysokosc}
     Rectangle btnPlakat = { 670, 25, 110, 38 };
     Rectangle btnRestart = { 790, 25, 145, 38 };
     Rectangle btnPauza = { 945, 25, 130, 38 };
@@ -166,9 +177,9 @@ void OknoMapy::pokaz()
     Color roz = { 252, 175, 185, 255 };
     Color tekst = { 235, 215, 220, 255 };
 
-    while (!WindowShouldClose())
+    while (!WindowShouldClose()) // glowna petla okna (wykonuje sie 60 razy na sekunde)
     {
-        if (ekran == 1 && !pauza && punkty.size() >= 2)
+        if (ekran == 1 && !pauza && punkty.size() >= 2) // animacja przelotu samolotu miedzy kolejnymi miastami
         {
             if (pauzaKlatki > 0) pauzaKlatki--;
             else
@@ -188,7 +199,7 @@ void OknoMapy::pokaz()
             }
         }
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) // obsluga klikniec myszka
         {
             Vector2 mysz = GetMousePosition();
             if (ekran == 0 && CheckCollisionPointRec(mysz, btnMapa))
@@ -206,6 +217,7 @@ void OknoMapy::pokaz()
                 else if (CheckCollisionPointRec(mysz, btnPauza)) pauza = !pauza;
                 else if (CheckCollisionPointRec(mysz, btnBilety))
                 {
+                    // sprzedaz biletow bezposrednio na obiekcie Koncert z obsluga wyjatku
                     try
                     {
                         koncerty[wybrany]->sprzedajBilety(1000);
@@ -220,7 +232,7 @@ void OknoMapy::pokaz()
                 }
                 else
                 {
-                    int ile = liczbaKoncertow < 6 ? liczbaKoncertow : 6;
+                    int ile = liczbaKoncertow < 6 ? liczbaKoncertow : 6; // wybor przystanku na liscie po lewej albo bezposrednio na mapie
                     for (int i = 0; i < ile; i++)
                     {
                         if (CheckCollisionPointRec(mysz, Rectangle{ 15, 135.0f + i * 86, 240, 76 }))
@@ -243,6 +255,7 @@ void OknoMapy::pokaz()
 
         if (ekran == 0)
         {
+            // ekran powitalny z plakatem i harmonogramem
             DrawRectangleGradientV(0, 0, 1100, 680, Color{ 48, 10, 20, 255 }, Color{ 16, 5, 8, 255 });
             DrawRectangleRounded(Rectangle{ 50, 50, 1000, 580 }, 0.05f, 10, bordoCiemny);
 
@@ -270,6 +283,7 @@ void OknoMapy::pokaz()
         }
         else
         {
+            // gorny pasek naglowka
             ClearBackground(Color{ 18, 6, 9, 255 });
             DrawRectangleGradientH(0, 0, 1100, 90, Color{ 40, 10, 18, 255 }, Color{ 82, 16, 28, 255 });
             DrawLine(0, 90, 1100, 90, czerwien);
@@ -289,6 +303,7 @@ void OknoMapy::pokaz()
             rysujPrzycisk(font, btnRestart, "ODTWORZ LOT", czerwien);
             rysujPrzycisk(font, btnPauza, pauza ? "WZNOW" : "PAUZA", bordoAkt);
 
+            // lewy panel z lista przystankow
             DrawRectangle(0, 91, 270, 589, bordoCiemny);
             DrawLine(270, 91, 270, 680, czerwien);
             DrawTextEx(font, "PRZYSTANKI TRASY", Vector2{ 18, 106 }, 15, 1, roz);
@@ -306,7 +321,7 @@ void OknoMapy::pokaz()
                 DrawTextEx(font, l3.c_str(), Vector2{ 24, cy + 50 }, 13, 1, roz);
             }
 
-            if (texMapa.id != 0)
+            if (texMapa.id != 0) // mapa swiata, linie trasy i punkty miast
             {
                 Rectangle src = { 0, 0, (float)texMapa.width, (float)texMapa.height };
                 DrawTexturePro(texMapa, src, Rectangle{ 270, 90, 830, 475 }, Vector2{ 0, 0 }, 0, Color{ 165, 36, 52, 255 });
@@ -326,12 +341,12 @@ void OknoMapy::pokaz()
                 DrawTextEx(font, punkty[i].miasto.c_str(), Vector2{ punkty[i].x + r + 4, punkty[i].y - 7 }, 14, 1, WHITE);
             }
 
-            float fx = cos(kat), fy = sin(kat), rx = -fy, ry = fx;
+            float fx = cos(kat), fy = sin(kat), rx = -fy, ry = fx; // samolot narysowany z 3 odcinkow (kadlub, skrzydla, ogon)
             DrawLineEx(Vector2{ samX - fx * 11, samY - fy * 11 }, Vector2{ samX + fx * 13, samY + fy * 13 }, 3.5f, WHITE);
             DrawLineEx(Vector2{ samX - fx * 2 - rx * 12, samY - fy * 2 - ry * 12 }, Vector2{ samX - fx * 2 + rx * 12, samY - fy * 2 + ry * 12 }, 3.0f, WHITE);
             DrawLineEx(Vector2{ samX - fx * 9 - rx * 5, samY - fy * 9 - ry * 5 }, Vector2{ samX - fx * 9 + rx * 5, samY - fy * 9 + ry * 5 }, 2.5f, roz);
 
-            DrawRectangle(271, 565, 829, 115, bordoCiemny);
+            DrawRectangle(271, 565, 829, 115, bordoCiemny); // dolny panel wybranego koncertu i pasek sprzedazy biletow
             DrawLine(271, 565, 1100, 565, czerwien);
 
             Koncert* k = koncerty[wybrany];
@@ -360,7 +375,7 @@ void OknoMapy::pokaz()
         EndDrawing();
     }
 
-    if (maFont) UnloadFont(font);
+    if (maFont) UnloadFont(font); // zwolnienie zasobow graficznych po zamknieciu okna
     if (texFoto.id != 0) UnloadTexture(texFoto);
     if (texMapa.id != 0) UnloadTexture(texMapa);
     CloseWindow();
