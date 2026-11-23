@@ -121,3 +121,45 @@ Do uruchomienia programu potrzebny jest kompilator `g++` (np. MSYS2/MinGW-w64) z
 g++ main.cpp Artysta.cpp Solista.cpp Zespol.cpp Koncert.cpp TrasaKoncertowa.cpp OknoMapy.cpp -o program.exe -lraylib -lgdi32 -lwinmm
 .\program.exe
 ```
+## Przykłady działania programu
+
+**1. Utworzenie trasy, dodanie koncertów i podsumowanie (opcje `1`, `3`, `4`):**
+Po utworzeniu trasy `BTS ARIRANG WORLD TOUR` dla zespołu `BTS` (stawka `500000` EUR, `7` członków) i dodaniu dwóch koncertów (`Seoul`, `Brussels`), opcja `4` wyświetla plan trasy (z użyciem przeciążonego operatora `<<` oraz polimorficznej metody `wyswietlWymagania()`) i wylicza całkowity budżet:
+
+```text
+=========================================
+ TRASA KONCERTOWA: BTS ARIRANG WORLD TOUR
+ Liczba zaplanowanych koncertow: 2
+=========================================
+
+[1] Seoul (Olympic Stadium) | Data: 15.06.2026 | Zajete miejsca: 0 / 50000
+Na scenie wystapi:
+ZESPOL: BTS | Stawka: 500000 EUR
+Liczba czlonkow na scenie: 7 osob
+
+[2] Brussels (King Baudouin Stadium) | Data: 01.07.2026 | Zajete miejsca: 0 / 50000
+Na scenie wystapi:
+ZESPOL: BTS | Stawka: 500000 EUR
+Liczba czlonkow na scenie: 7 osob
+
+>>> CALKOWITA WYCENA TRASY: 1000000 EUR <<<
+```
+
+**2. Sprzedaż biletów i obsługa wyjątku przy braku miejsc (opcja `5`):**
+Jeśli liczba biletów mieści się w pojemności stadionu, program aktualizuje licznik. Przy próbie przekroczenia pojemności rzuca wyjątek (`throw`), który zostaje obsłużony w bloku `try`/`catch`:
+
+```text
+Wybierz numer koncertu z listy: 1
+Ile biletow chcesz sprzedac? 60000
+Blad operacji: BLAD: Brak miejsc na stadionie!
+```
+
+**3. Raport wszystkich tras i wskazanie najdroższej (opcja `7`):**
+Gdy w agencji jest więcej niż jedna trasa, program porównuje ich budżety za pomocą przeciążonego operatora `<` i wskazuje najdroższą z nich:
+
+```text
+>>> NAJDROZSZA TRASA W AGENCJI: BTS ARIRANG WORLD TOUR (1000000 EUR) <<<
+```
+
+**4. Wizualizacja na mapie (opcja `8`):**
+Otwiera okno `raylib` z plakatem trasy (jeśli istnieje plik graficzny dla wykonawcy), animacją lotu samolotu między miastami oraz możliwością klikania przystanków i szybkiej sprzedaży biletów przyciskiem `+1000 BILETOW`.
